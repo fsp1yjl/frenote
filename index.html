@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="指板手记：用 CAGED 系统推导吉他和弦，并记录每一次练习。"
+    />
+    <meta name="theme-color" content="#18392f" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="./styles.css?v=15" />
+    <title>指板手记 · Fretnote</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#studio" aria-label="指板手记首页">
+          <span class="brand-mark" aria-hidden="true">
+            <span class="brand-string"></span>
+            <span class="brand-string"></span>
+            <span class="brand-string"></span>
+          </span>
+          <span class="brand-copy">
+            <strong>指板手记</strong>
+            <small>FRETNOTE</small>
+          </span>
+        </a>
+
+        <nav class="main-nav" aria-label="主导航">
+          <button class="nav-button is-active" type="button" data-view="studio">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 18.5V6l8-3.5L20 6v12.5L12 22l-8-3.5Z" />
+              <path d="M8 5.2v13.3M12 3.7v16.6M16 5.2v13.3" />
+            </svg>
+            CAGED 指板
+          </button>
+          <button class="nav-button" type="button" data-view="journal">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3h11a2 2 0 0 1 2 2v16H7a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2Z" />
+              <path d="M8 3v18M8 7h7M8 11h7" />
+            </svg>
+            学习档案
+          </button>
+        </nav>
+
+        <div class="local-status" title="所有记录仅保存在当前浏览器">
+          <span class="status-dot"></span>
+          <span>本地保存</span>
+        </div>
+      </header>
+
+      <main>
+        <section class="view is-active" id="studio" aria-labelledby="studio-title">
+          <div class="hero">
+            <div class="hero-copy">
+              <p class="eyebrow">CAGED · CHORD SYSTEM</p>
+              <h1 id="studio-title">把和弦形状，变成一张可推导的地图。</h1>
+              <p class="hero-subtitle">
+                选择调性与和弦类型，观察从三和弦到七和弦的音程如何变化。不是背形状，而是理解它为何成立。
+              </p>
+            </div>
+            <div class="hero-chord" aria-live="polite">
+              <div class="hero-chord-letter" id="heroChordLetter">E</div>
+              <div class="hero-chord-meta">
+                <span id="heroChordType">大三和弦</span>
+                <strong id="heroChordNotes">E · G# · B</strong>
+              </div>
+            </div>
+          </div>
+
+          <section class="key-ribbon" aria-labelledby="key-label">
+            <div class="key-ribbon-heading">
+              <span class="section-kicker">01 / KEY</span>
+              <h2 id="key-label">当前调性</h2>
+            </div>
+            <div class="key-picker" id="keyPicker" aria-label="选择调性"></div>
+            <div class="tuning-note">
+              <span>标准调弦</span>
+              <strong>6→1 · E A D G B E</strong>
+            </div>
+          </section>
+
+          <section class="quality-ribbon" aria-labelledby="quality-label">
+            <div class="quality-ribbon-heading">
+              <span class="section-kicker">02 / QUALITY</span>
+              <h2 id="quality-label">和弦类型</h2>
+              <span id="qualityFormula">1 · 3 · 5</span>
+            </div>
+            <div class="quality-picker" id="qualityPicker" aria-label="选择和弦类型"></div>
+          </section>
+
+          <div class="studio-grid">
+            <div class="study-column">
+              <article class="panel fretboard-panel">
+                <div class="panel-heading fretboard-heading">
+                  <div>
+                    <p class="section-kicker">03 / FRETBOARD</p>
+                    <h2>指板地图</h2>
+                  </div>
+                  <div class="fret-controls" aria-label="指板显示设置">
+                    <button class="text-button" id="scaleToggle" type="button" aria-pressed="false">
+                      显示调外音
+                    </button>
+                    <div class="segmented-control" aria-label="音点标签">
+                      <button class="is-active" type="button" data-label-mode="note">音名</button>
+                      <button type="button" data-label-mode="degree">级数</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="fretboard-wrap">
+                  <svg
+                    id="fretboard"
+                    class="fretboard"
+                    viewBox="0 0 900 284"
+                    role="img"
+                    aria-labelledby="fretboard-title fretboard-description"
+                  >
+                    <title id="fretboard-title">吉他指板上的和弦音</title>
+                    <desc id="fretboard-description">
+                      显示当前和弦音，以及所选 CAGED 指型的位置。
+                    </desc>
+                  </svg>
+                </div>
+
+                <div class="fretboard-footer">
+                  <div class="legend" id="chordLegend" aria-label="和弦音图例"></div>
+                  <button class="note-inspector" id="noteInspector" type="button">
+                    <span class="inspector-hint">点击任意音点</span>
+                    <strong>查看音程关系</strong>
+                  </button>
+                </div>
+              </article>
+
+              <section class="shape-section" aria-labelledby="shape-title">
+                <div class="section-heading">
+                  <div>
+                    <p class="section-kicker">04 / SHAPES</p>
+                    <h2 id="shape-title">五种根音锚点</h2>
+                  </div>
+                  <p>点击指型，查看它在当前调中的实际落点。</p>
+                </div>
+                <div class="shape-grid" id="shapePicker"></div>
+              </section>
+
+              <article class="panel fingering-panel" id="fingeringPanel" aria-live="polite"></article>
+            </div>
+
+            <aside class="insight-column">
+              <article class="panel formula-card" id="formulaCard"></article>
+
+              <article class="panel practice-card">
+                <div class="practice-heading">
+                  <div>
+                    <p class="section-kicker">05 / PRACTICE</p>
+                    <h2>今日推导</h2>
+                  </div>
+                  <span class="progress-count" id="practiceCount">0 / 4</span>
+                </div>
+                <div class="progress-track" aria-hidden="true">
+                  <span id="practiceProgress"></span>
+                </div>
+                <div class="practice-list" id="practiceList"></div>
+              </article>
+
+              <article class="panel scratch-card">
+                <div class="scratch-heading">
+                  <div>
+                    <p class="section-kicker">06 / CAPTURE</p>
+                    <h2>随手记</h2>
+                  </div>
+                  <span class="save-state" id="scratchState">自动保存</span>
+                </div>
+                <label class="sr-only" for="scratchNote">随手笔记</label>
+                <textarea
+                  id="scratchNote"
+                  rows="5"
+                  placeholder="比如：E 音在 5 弦 7 品既是 C 型也是 A 型的根音……"
+                ></textarea>
+                <button class="secondary-button full-width" id="promoteNote" type="button">
+                  保存为学习记录
+                  <span aria-hidden="true">→</span>
+                </button>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" id="journal" aria-labelledby="journal-title" hidden>
+          <div class="journal-hero">
+            <div>
+              <p class="eyebrow">PRACTICE JOURNAL</p>
+              <h1 id="journal-title">每一次推导，都留下痕迹。</h1>
+              <p class="hero-subtitle">
+                把练习整理成结构化记录。数据保存在当前浏览器，也可以随时导出为开放格式。
+              </p>
+            </div>
+            <button class="primary-button" id="newJournalButton" type="button">
+              <span aria-hidden="true">＋</span>
+              新记录
+            </button>
+          </div>
+
+          <section class="stats-grid" id="journalStats" aria-label="学习统计"></section>
+
+          <div class="journal-grid">
+            <section class="journal-feed" aria-labelledby="log-title">
+              <div class="feed-toolbar">
+                <div>
+                  <p class="section-kicker">STUDY LOG</p>
+                  <h2 id="log-title">学习记录</h2>
+                </div>
+                <label class="search-field">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="11" cy="11" r="7"></circle>
+                    <path d="m16.5 16.5 4 4"></path>
+                  </svg>
+                  <input id="journalSearch" type="search" placeholder="搜索记录、标签…" />
+                </label>
+              </div>
+
+              <div class="export-bar">
+                <div>
+                  <strong>开放格式</strong>
+                  <span>JSON 可备份与迁移，Markdown 适合长期整理。</span>
+                </div>
+                <div class="export-actions">
+                  <button class="small-button" type="button" id="exportJson">导出 JSON</button>
+                  <button class="small-button" type="button" id="exportMarkdown">导出 Markdown</button>
+                  <button class="small-button" type="button" id="importButton">导入</button>
+                </div>
+              </div>
+
+              <div class="journal-list" id="journalList"></div>
+            </section>
+
+            <aside class="panel journal-editor" id="journalEditor">
+              <div class="editor-heading">
+                <div>
+                  <p class="section-kicker">ENTRY</p>
+                  <h2 id="editorTitle">新学习记录</h2>
+                </div>
+                <button class="icon-button" id="closeEditor" type="button" aria-label="清空编辑">
+                  ×
+                </button>
+              </div>
+              <form id="journalForm">
+                <div class="form-row two">
+                  <label>
+                    日期
+                    <input id="entryDate" name="date" type="date" required />
+                  </label>
+                  <label>
+                    练习时长 / 分钟
+                    <input id="entryDuration" name="duration" type="number" min="1" max="999" value="30" required />
+                  </label>
+                </div>
+                <div class="form-row three">
+                  <label>
+                    调性
+                    <select id="entryKey" name="key"></select>
+                  </label>
+                  <label>
+                    和弦类型
+                    <select id="entryChordType" name="chordType"></select>
+                  </label>
+                  <label>
+                    CAGED 指型
+                    <select id="entryShape" name="shape">
+                      <option value="全部">全部 / 五种</option>
+                      <option value="C">C 型</option>
+                      <option value="A">A 型</option>
+                      <option value="G">G 型</option>
+                      <option value="E">E 型</option>
+                      <option value="D">D 型</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  标题
+                  <input id="entryTitle" name="title" type="text" placeholder="今天发现了什么？" required />
+                </label>
+                <label>
+                  练习笔记
+                  <textarea
+                    id="entryNotes"
+                    name="notes"
+                    rows="8"
+                    placeholder="记录推导过程、卡点、听感或下一次要验证的问题……"
+                    required
+                  ></textarea>
+                </label>
+                <label>
+                  标签
+                  <input id="entryTags" name="tags" type="text" placeholder="根音定位, 同音异形, 换把位" />
+                </label>
+                <p class="form-error" id="formError" role="alert"></p>
+                <div class="form-actions">
+                  <button class="primary-button" type="submit" id="saveJournalButton">保存记录</button>
+                  <button class="text-button" type="button" id="cancelEdit">取消</button>
+                </div>
+              </form>
+              <details class="schema-details">
+                <summary>电子文档结构</summary>
+                <p>
+                  每条记录包含 <code>date</code>、<code>durationMinutes</code>、<code>key</code>、
+                  <code>chordType</code>、<code>shapes</code>、<code>focus</code>、<code>tags</code> 与时间戳。文件格式标识为
+                  <code>fretnote.guitar-journal</code>。
+                </p>
+              </details>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>FRETNOTE · 让指板成为一张可推导的地图</span>
+        <span>数据仅保存在本地浏览器</span>
+      </footer>
+    </div>
+
+    <input id="importFile" type="file" accept="application/json,.json" hidden />
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="./app.js?v=15"></script>
+  </body>
+</html>
