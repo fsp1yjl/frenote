@@ -1,11 +1,6 @@
 const OPEN_PCS = [4, 9, 2, 7, 11, 4];
 const STRING_LABELS = ["E", "A", "D", "G", "B", "E"];
 const FRET_COUNT = 15;
-const STORAGE = {
-  sessions: "fretnote.sessions.v1",
-  practice: "fretnote.practice.v1",
-  scratch: "fretnote.scratch.v1",
-};
 
 const KEYS = [
   { pc: 0, label: "C", chord: ["C", "E", "G"], accidental: "natural" },
@@ -111,13 +106,6 @@ const SHAPE_CONFIGS = {
 };
 
 const SHAPE_ORDER = ["C", "A", "G", "E", "D"];
-const PRACTICE_TASKS = [
-  { id: "root", label: "先不看高亮，找到当前调和弦的根音" },
-  { id: "tones", label: "说出当前和弦的音程与实际音名" },
-  { id: "shapes", label: "用 CAGED 顺序串起相邻把位" },
-  { id: "transfer", label: "换一个调，重新推导同一个音" },
-];
-
 const NOTE_NAMES_SHARP = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 const NOTE_NAMES_FLAT = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
 const LETTERS = ["C", "D", "E", "F", "G", "A", "B"];
@@ -150,16 +138,12 @@ const INTERVAL_LABEL = {
 const FINGER_NAMES = { 1: "食指", 2: "中指", 3: "无名指", 4: "小指" };
 
 const state = {
-  currentView: "studio",
   keyIndex: KEYS.findIndex((key) => key.label === "E"),
   chordType: "major",
   selectedShape: "E",
   labelMode: "note",
   showScaleNotes: false,
   selectedNote: null,
-  editingId: null,
-  sessions: [],
-  practice: {},
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -460,78 +444,6 @@ function buildShape(shapeKey) {
 
 function allShapes() {
   return SHAPE_ORDER.map((shapeKey) => buildShape(shapeKey));
-}
-
-function localDateValue(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function parseStored(key, fallback) {
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : fallback;
-  } catch (error) {
-    console.warn(`Unable to parse ${key}`, error);
-    return fallback;
-  }
-}
-
-function persist(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.warn(`Unable to store ${key}`, error);
-  }
-}
-
-function seedSessions() {
-  const today = localDateValue();
-  const now = new Date().toISOString();
-  return [
-    {
-      id: crypto.randomUUID(),
-      date: today,
-      durationMinutes: 45,
-      key: "E",
-      chordType: "major",
-      shapes: "CAGED",
-      title: "E 大调：把五种指型串起来",
-      focus:
-        "从六弦与五弦根音定位 E 型、G 型、C 型、A 型，再从四弦找到 D 型。重点观察同一个根音在不同指型中的位置。",
-      tags: ["根音定位", "同音异形", "换把位"],
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: crypto.randomUUID(),
-      date: today,
-      durationMinutes: 25,
-      key: "C",
-      chordType: "major",
-      shapes: "C / A / G",
-      title: "把公式变成音名，而不只是数字",
-      focus:
-        "C 型和 A 型都以五弦作根音锚点；G 型从六弦出发。练习时先说出 1-3-5，再对应到实际音名，最后听两遍和弦。",
-      tags: ["和弦音", "听觉训练"],
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-}
-
-function initializeData() {
-  const storedSessions = parseStored(STORAGE.sessions, null);
-  const sessions = Array.isArray(storedSessions) ? storedSessions : seedSessions();
-  state.sessions = sessions.map((session) => ({
-    ...session,
-    chordType: CHORD_TYPES[session.chordType] ? session.chordType : "major",
-  }));
-  persist(STORAGE.sessions, state.sessions);
-  state.practice = parseStored(STORAGE.practice, {});
-  $("#scratchNote").value = parseStored(STORAGE.scratch, "");
 }
 
 function renderKeys() {
@@ -946,43 +858,6 @@ function renderFormulaCard() {
   `;
 }
 
-function practiceKey(keyLabel = currentKey().label, quality = state.chordType) {
-  return `${keyLabel}:${quality}`;
-}
-
-function getPractice(keyLabel = currentKey().label, quality = state.chordType) {
-  const composite = state.practice[practiceKey(keyLabel, quality)];
-  if (composite) return composite;
-  // Preserve progress from the original major-chord-only data model.
-  return quality === "major" ? state.practice[keyLabel] || {} : {};
-}
-
-function renderPractice() {
-  const done = getPractice();
-  const count = PRACTICE_TASKS.filter((task) => done[task.id]).length;
-  $("#practiceCount").textContent = `${count} / ${PRACTICE_TASKS.length}`;
-  $("#practiceProgress").style.width = `${(count / PRACTICE_TASKS.length) * 100}%`;
-  $("#practiceList").innerHTML = PRACTICE_TASKS.map(
-    (task) => {
-      const label =
-        task.id === "tones"
-          ? `说出 ${currentChordType().formula.join("、")} 的名称与实际音名`
-          : task.label;
-      return `
-      <button
-        class="practice-task ${done[task.id] ? "is-done" : ""}"
-        type="button"
-        data-task="${task.id}"
-        aria-pressed="${Boolean(done[task.id])}"
-      >
-        <span class="task-check">✓</span>
-        <span>${label}</span>
-      </button>
-    `;
-    },
-  ).join("");
-}
-
 function renderChordLegend() {
   $("#chordLegend").innerHTML = `
     ${chordToneDefinitions()
@@ -1004,184 +879,6 @@ function renderStudio() {
   renderShapeCards();
   renderFingeringPanel();
   renderFormulaCard();
-  renderPractice();
-}
-
-function compareSessions(a, b) {
-  return b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt);
-}
-
-function renderJournalStats() {
-  const totalMinutes = state.sessions.reduce(
-    (sum, session) => sum + Number(session.durationMinutes || 0),
-    0,
-  );
-  const notes = new Set(state.sessions.flatMap((session) => session.tags || []));
-  const days = new Set(state.sessions.map((session) => session.date));
-  $("#journalStats").innerHTML = `
-    <article class="stat-card">
-      <span>LEARNING LOG</span>
-      <strong>${state.sessions.length}</strong><small>次记录</small>
-    </article>
-    <article class="stat-card">
-      <span>PRACTICE TIME</span>
-      <strong>${totalMinutes}</strong><small>分钟</small>
-    </article>
-    <article class="stat-card">
-      <span>REPERTOIRE</span>
-      <strong>${days.size}</strong><small>个练习日 · ${notes.size} 个标签</small>
-    </article>
-  `;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function renderJournalList() {
-  const query = $("#journalSearch").value.trim().toLowerCase();
-  const sessions = [...state.sessions].sort(compareSessions).filter((session) => {
-    if (!query) return true;
-    return [
-      session.title,
-      session.focus,
-      session.key,
-      session.shapes,
-      CHORD_TYPES[session.chordType]?.label || "",
-      ...(session.tags || []),
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(query);
-  });
-
-  if (!sessions.length) {
-    $("#journalList").innerHTML = `
-      <div class="empty-state">
-        <strong>${query ? "没有找到匹配的记录" : "从第一段练习开始"}</strong>
-        <p>${query ? "试试搜索调性、CAGED 指型或标签。" : "记录推导过程，比只记下答案更有价值。"}</p>
-      </div>
-    `;
-    return;
-  }
-
-  const dateFormatter = new Intl.DateTimeFormat("zh-CN", {
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-  });
-
-  $("#journalList").innerHTML = sessions
-    .map((session) => {
-      const date = new Date(`${session.date}T12:00:00`);
-      const dateLabel = Number.isNaN(date.getTime()) ? session.date : dateFormatter.format(date);
-      const chordType = CHORD_TYPES[session.chordType] || CHORD_TYPES.major;
-      return `
-        <article class="journal-card">
-          <div class="journal-card-top">
-            <div class="entry-meta">
-              <span class="entry-key">${escapeHtml(session.key)}</span>
-              <span>${escapeHtml(chordType.label)} · ${escapeHtml(dateLabel)} · ${escapeHtml(session.durationMinutes)} 分钟</span>
-              <span class="entry-shapes">${escapeHtml(session.shapes)}</span>
-            </div>
-            <div class="entry-actions">
-              <button class="icon-button" type="button" data-edit-id="${session.id}" aria-label="编辑 ${escapeHtml(session.title)}">✎</button>
-              <button class="icon-button" type="button" data-delete-id="${session.id}" aria-label="删除 ${escapeHtml(session.title)}">×</button>
-            </div>
-          </div>
-          <h3>${escapeHtml(session.title)}</h3>
-          <p>${escapeHtml(session.focus)}</p>
-          ${
-            session.tags?.length
-              ? `<div class="entry-tags">${session.tags
-                  .map((tag) => `<span># ${escapeHtml(tag)}</span>`)
-                  .join("")}</div>`
-              : ""
-          }
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function populateKeySelect() {
-  $("#entryKey").innerHTML = KEYS.map(
-    (key) => `<option value="${key.label}">${key.label} 根音</option>`,
-  ).join("");
-}
-
-function populateChordTypeSelect() {
-  $("#entryChordType").innerHTML = CHORD_TYPE_ORDER.map(
-    (typeId) =>
-      `<option value="${typeId}">${CHORD_TYPES[typeId].label}</option>`,
-  ).join("");
-}
-
-function resetJournalForm() {
-  state.editingId = null;
-  $("#journalForm").reset();
-  $("#editorTitle").textContent = "新学习记录";
-  $("#saveJournalButton").textContent = "保存记录";
-  $("#entryDate").value = localDateValue();
-  $("#entryDuration").value = "30";
-  $("#entryKey").value = currentKey().label;
-  $("#entryChordType").value = state.chordType;
-  $("#entryShape").value = state.selectedShape;
-  $("#formError").textContent = "";
-}
-
-function loadSessionIntoEditor(id) {
-  const session = state.sessions.find((entry) => entry.id === id);
-  if (!session) return;
-  state.editingId = id;
-  $("#journalForm").reset();
-  $("#entryDate").value = session.date;
-  $("#entryDuration").value = session.durationMinutes;
-  $("#entryKey").value = session.key;
-  $("#entryChordType").value = session.chordType || "major";
-  $("#entryShape").value = session.shapes;
-  $("#entryTitle").value = session.title;
-  $("#entryNotes").value = session.focus;
-  $("#entryTags").value = (session.tags || []).join(", ");
-  $("#editorTitle").textContent = "编辑学习记录";
-  $("#saveJournalButton").textContent = "保存修改";
-  $("#formError").textContent = "";
-  switchView("journal");
-  $("#journalEditor").scrollIntoView({ behavior: "smooth", block: "start" });
-  $("#entryTitle").focus({ preventScroll: true });
-}
-
-function renderJournal() {
-  renderJournalStats();
-  renderJournalList();
-}
-
-function showToast(message) {
-  const toast = $("#toast");
-  toast.textContent = message;
-  toast.classList.add("is-visible");
-  clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
-}
-
-function switchView(viewName) {
-  state.currentView = viewName;
-  $$(".view").forEach((view) => {
-    const isActive = view.id === viewName;
-    view.hidden = !isActive;
-    view.classList.toggle("is-active", isActive);
-  });
-  $$(".nav-button").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.view === viewName);
-  });
-  if (viewName === "journal") renderJournal();
-  history.replaceState(null, "", viewName === "studio" ? "#studio" : "#journal");
-  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 function updateStateAndRender(changes = {}) {
@@ -1212,121 +909,6 @@ function formatInspector(note) {
   }
 }
 
-function buildExportDocument() {
-  return {
-    format: "fretnote.guitar-journal",
-    schemaVersion: "1.1",
-    exportedAt: new Date().toISOString(),
-    instrument: {
-      type: "guitar",
-      tuning: ["E2", "A2", "D3", "G3", "B3", "E4"],
-      system: "CAGED",
-      chordTypes: CHORD_TYPE_ORDER,
-    },
-    practiceProgress: state.practice,
-    sessions: [...state.sessions].sort(compareSessions),
-  };
-}
-
-function downloadFile(filename, content, type) {
-  const blob = new Blob([content], { type });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function buildMarkdown() {
-  const doc = buildExportDocument();
-  const lines = [
-    "# 指板手记 · CAGED 学习档案",
-    "",
-    `- 导出时间：${new Date(doc.exportedAt).toLocaleString("zh-CN")}`,
-    "- 乐器：Guitar",
-    "- 标准调弦：E A D G B E",
-    "- 学习系统：CAGED 和弦系统",
-    `- 记录数量：${doc.sessions.length}`,
-    "",
-    "---",
-    "",
-  ];
-
-  for (const session of doc.sessions) {
-    const chordType = CHORD_TYPES[session.chordType] || CHORD_TYPES.major;
-    lines.push(
-      `## ${session.date} · ${session.title}`,
-      "",
-      `- 和弦：${session.key}${chordType.suffix}（${chordType.label}）`,
-      `- CAGED 指型：${session.shapes}`,
-      `- 练习时长：${session.durationMinutes} 分钟`,
-      `- 标签：${(session.tags || []).map((tag) => `#${tag}`).join(" ") || "无"}`,
-      "",
-      session.focus,
-      "",
-    );
-  }
-
-  lines.push("## 练习进度", "");
-  for (const [practiceId, tasks] of Object.entries(doc.practiceProgress)) {
-    const [key, quality] = practiceId.split(":");
-    const chordType = CHORD_TYPES[quality] || CHORD_TYPES.major;
-    const done = PRACTICE_TASKS.filter((task) => tasks[task.id]).map((task) => task.label);
-    lines.push(
-      `- ${key}${chordType.suffix} ${chordType.label}：${done.length}/4${done.length ? ` · ${done.join("；")}` : ""}`,
-    );
-  }
-  lines.push("");
-  return lines.join("\n");
-}
-
-function importJournal(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      if (data.format !== "fretnote.guitar-journal" || !Array.isArray(data.sessions)) {
-        throw new Error("文件不是指板手记学习档案。");
-      }
-
-      const normalized = data.sessions
-        .filter((session) => session && session.title && session.date)
-        .map((session) => ({
-          id: session.id || crypto.randomUUID(),
-          date: String(session.date),
-          durationMinutes: Number(session.durationMinutes) || 0,
-          key: String(session.key || "C"),
-          chordType: CHORD_TYPES[session.chordType] ? session.chordType : "major",
-          shapes: String(session.shapes || "全部"),
-          title: String(session.title),
-          focus: String(session.focus || ""),
-          tags: Array.isArray(session.tags) ? session.tags.map(String) : [],
-          createdAt: session.createdAt || new Date().toISOString(),
-          updatedAt: session.updatedAt || new Date().toISOString(),
-        }));
-
-      state.sessions = normalized;
-      state.practice =
-        data.practiceProgress && typeof data.practiceProgress === "object"
-          ? data.practiceProgress
-          : {};
-      persist(STORAGE.sessions, state.sessions);
-      persist(STORAGE.practice, state.practice);
-      renderJournal();
-      renderPractice();
-      showToast(`已导入 ${normalized.length} 条学习记录`);
-    } catch (error) {
-      showToast(`导入失败：${error.message}`);
-    } finally {
-      $("#importFile").value = "";
-    }
-  };
-  reader.readAsText(file);
-}
-
 function setShape(shapeKey) {
   updateStateAndRender({ selectedShape: shapeKey, selectedNote: null });
   $("#noteInspector").innerHTML = `
@@ -1352,25 +934,6 @@ function setKey(index) {
   `;
 }
 
-function promoteScratchNote() {
-  const text = $("#scratchNote").value.trim();
-  if (!text) {
-    showToast("先写下一点内容，再保存为学习记录");
-    $("#scratchNote").focus();
-    return;
-  }
-
-  resetJournalForm();
-  $("#entryKey").value = currentKey().label;
-  $("#entryChordType").value = state.chordType;
-  $("#entryShape").value = state.selectedShape;
-  $("#entryTitle").value = `${currentChordName()} ${currentChordType().label} · ${SHAPE_CONFIGS[state.selectedShape].label}推导`;
-  $("#entryNotes").value = text;
-  $("#entryTags").value = "CAGED, 随手记";
-  switchView("journal");
-  $("#entryTitle").focus();
-}
-
 function registerServiceWorker() {
   if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
     navigator.serviceWorker.register("./sw.js").catch((error) => {
@@ -1380,15 +943,6 @@ function registerServiceWorker() {
 }
 
 function bindEvents() {
-  $$(".nav-button").forEach((button) => {
-    button.addEventListener("click", () => switchView(button.dataset.view));
-  });
-
-  $(".brand").addEventListener("click", (event) => {
-    event.preventDefault();
-    switchView("studio");
-  });
-
   $("#keyPicker").addEventListener("click", (event) => {
     const button = event.target.closest("[data-key-index]");
     if (button) setKey(button.dataset.keyIndex);
@@ -1447,136 +1001,11 @@ function bindEvents() {
     formatInspector(note);
   });
 
-  $("#practiceList").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-task]");
-    if (!button) return;
-    const key = practiceKey();
-    const taskId = button.dataset.task;
-    const current = getPractice();
-    state.practice[key] = { ...current, [taskId]: !current[taskId] };
-    persist(STORAGE.practice, state.practice);
-    renderPractice();
-  });
-
-  let scratchTimer;
-  $("#scratchNote").addEventListener("input", () => {
-    $("#scratchState").textContent = "正在保存…";
-    clearTimeout(scratchTimer);
-    scratchTimer = setTimeout(() => {
-      persist(STORAGE.scratch, $("#scratchNote").value);
-      $("#scratchState").textContent = "已自动保存";
-    }, 350);
-  });
-
-  $("#promoteNote").addEventListener("click", promoteScratchNote);
-
-  $("#journalSearch").addEventListener("input", renderJournalList);
-
-  $("#newJournalButton").addEventListener("click", () => {
-    resetJournalForm();
-    switchView("journal");
-    $("#entryTitle").focus();
-  });
-
-  $("#closeEditor").addEventListener("click", resetJournalForm);
-  $("#cancelEdit").addEventListener("click", resetJournalForm);
-
-  $("#journalForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const title = $("#entryTitle").value.trim();
-    const focus = $("#entryNotes").value.trim();
-    if (!title || !focus) {
-      $("#formError").textContent = "标题与练习笔记不能为空。";
-      return;
-    }
-
-    const now = new Date().toISOString();
-    const existing = state.sessions.find((session) => session.id === state.editingId);
-    const session = {
-      id: state.editingId || crypto.randomUUID(),
-      date: $("#entryDate").value,
-      durationMinutes: Number($("#entryDuration").value),
-      key: $("#entryKey").value,
-      chordType: $("#entryChordType").value || "major",
-      shapes: $("#entryShape").value,
-      title,
-      focus,
-      tags: $("#entryTags")
-        .value.split(/[,，]/)
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      createdAt: existing?.createdAt || now,
-      updatedAt: now,
-    };
-
-    if (state.editingId) {
-      state.sessions = state.sessions.map((entry) =>
-        entry.id === state.editingId ? session : entry,
-      );
-    } else {
-      state.sessions = [session, ...state.sessions];
-    }
-
-    persist(STORAGE.sessions, state.sessions);
-    resetJournalForm();
-    renderJournal();
-    showToast(existing ? "学习记录已更新" : "学习记录已保存");
-  });
-
-  $("#journalList").addEventListener("click", (event) => {
-    const editButton = event.target.closest("[data-edit-id]");
-    if (editButton) {
-      loadSessionIntoEditor(editButton.dataset.editId);
-      return;
-    }
-    const deleteButton = event.target.closest("[data-delete-id]");
-    if (deleteButton) {
-      const session = state.sessions.find((entry) => entry.id === deleteButton.dataset.deleteId);
-      if (!session) return;
-      if (!window.confirm(`删除“${session.title}”？此操作无法撤销。`)) return;
-      state.sessions = state.sessions.filter((entry) => entry.id !== session.id);
-      persist(STORAGE.sessions, state.sessions);
-      if (state.editingId === session.id) resetJournalForm();
-      renderJournal();
-      showToast("学习记录已删除");
-    }
-  });
-
-  $("#exportJson").addEventListener("click", () => {
-    downloadFile(
-      `fretnote-journal-${localDateValue()}.json`,
-      JSON.stringify(buildExportDocument(), null, 2),
-      "application/json",
-    );
-    showToast("JSON 学习档案已导出");
-  });
-
-  $("#exportMarkdown").addEventListener("click", () => {
-    downloadFile(
-      `fretnote-journal-${localDateValue()}.md`,
-      buildMarkdown(),
-      "text/markdown;charset=utf-8",
-    );
-    showToast("Markdown 学习档案已导出");
-  });
-
-  $("#importButton").addEventListener("click", () => $("#importFile").click());
-  $("#importFile").addEventListener("change", (event) => {
-    const file = event.target.files?.[0];
-    if (file) importJournal(file);
-  });
 }
 
 function init() {
-  initializeData();
-  populateKeySelect();
-  populateChordTypeSelect();
-  resetJournalForm();
   bindEvents();
   renderStudio();
-  renderJournal();
-  const initialView = location.hash === "#journal" ? "journal" : "studio";
-  switchView(initialView);
   registerServiceWorker();
 }
 

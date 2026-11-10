@@ -1,6 +1,6 @@
-# 指板手记 · Fretnote
+# 指板手记 · CAGED 指板知识
 
-一个用于 CAGED 和弦推导与吉他练习记录的本地 Web 应用。
+一个专注于 CAGED 和弦推导与指板知识的本地 Web 应用。这是完整应用的裁切版本，不包含学习档案、笔记、打卡或数据导入导出。
 
 ## 功能
 
@@ -8,9 +8,6 @@
 - CAGED 五种指型的根音定位、公式与实际音名
 - 当前指型的标准左手按法图，包含手指编号、空弦、闷弦与横按
 - 可交互的标准调弦指板
-- 按调记录练习进度
-- 结构化学习记录、搜索、编辑与删除
-- JSON 数据备份/导入，以及 Markdown 导出
 - 离线 PWA 支持
 
 ## 运行
@@ -23,39 +20,7 @@ python3 -m http.server 8000
 
 然后访问 <http://localhost:8000>。
 
-数据默认保存在浏览器 `localStorage` 中，不会上传到服务器。
-
-## JSON 格式
-
-导出文件使用以下顶层结构：
-
-```json
-{
-  "format": "fretnote.guitar-journal",
-  "schemaVersion": "1.1",
-  "exportedAt": "2026-11-11T00:00:00.000Z",
-  "instrument": {
-    "type": "guitar",
-    "tuning": ["E2", "A2", "D3", "G3", "B3", "E4"],
-    "system": "CAGED",
-    "chordTypes": ["major", "minor", "maj7", "dominant7", "minor7"]
-  },
-  "practiceProgress": {},
-  "sessions": []
-}
-```
-
-每条 `sessions` 记录包含：
-
-- `date`：练习日期，`YYYY-MM-DD`
-- `durationMinutes`：练习分钟数
-- `key`：调性
-- `chordType`：和弦类型，支持 `major`、`minor`、`maj7`、`dominant7`、`minor7`
-- `shapes`：CAGED 指型
-- `title`：记录标题
-- `focus`：练习笔记
-- `tags`：标签数组
-- `createdAt` / `updatedAt`：ISO 时间戳
+应用不保存练习内容，也不请求登录或上传数据。
 
 ## 指型约定
 
@@ -77,4 +42,4 @@ dim7: {
 }
 ```
 
-再把类型 ID 加入 `CHORD_TYPE_ORDER`，和弦选择器、音名推导、CAGED 指型、左手按法和学习档案会自动接入。若引入 `b5`、`bb7` 等当前尚未使用的级数，还需要在 `TONE_CLASS`、`TONE_LABEL`、`INTERVAL_LABEL` 与 `DEGREE_LETTER_STEPS` 中补充显示和拼写规则。
+再把类型 ID 加入 `CHORD_TYPE_ORDER`，和弦选择器、音名推导、CAGED 指型和左手按法会自动接入。若引入 `b5`、`bb7` 等当前尚未使用的级数，还需要在 `TONE_CLASS`、`TONE_LABEL`、`INTERVAL_LABEL` 与 `DEGREE_LETTER_STEPS` 中补充显示和拼写规则。

@@ -1,4 +1,4 @@
-const CACHE_NAME = "fretnote-v11";
+const CACHE_NAME = "fretnote-caged-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

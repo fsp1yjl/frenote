@@ -1,7 +1,7 @@
 {
-  "name": "指板手记 · Fretnote",
+  "name": "指板手记 · CAGED 指板知识",
   "short_name": "指板手记",
-  "description": "用 CAGED 系统推导吉他大三和弦，并记录每一次练习。",
+  "description": "专注 CAGED 和弦推导、指板定位与左手按法。",
   "start_url": "./index.html#studio",
   "display": "standalone",
   "background_color": "#f4efe4",
